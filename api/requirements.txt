@@ -1,0 +1,14 @@
+#python 3.11.9
+fastapi==0.111.1
+gunicorn
+pydantic-settings
+alembic
+tenacity
+psycopg2-binary
+asyncpg
+passlib
+python-jose
+emails
+openai
+langchain
+langchain_community

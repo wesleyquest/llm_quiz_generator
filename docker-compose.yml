@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  api:
+    container_name: ${API_SERVER}
+    build: ./api
+    env_file:
+      - .env
+    volumes:
+      - ./api:/app
+    ports:
+      - 8000:${API_PORT}
+    depends_on:
+      - db
+    #command: /bin/bash -c "/app/pre-start.sh && uvicorn app.main:app --host 0.0.0.0 --port 80 --reload" 
+    #prod: gunicorn src.main:app --bind 0:8000 --workers 2 --worker-class uvicorn.workers.UvicornWorker --reload
+    #dev: fastapi dev ./src/main.py --host 0.0.0.0
+    command:
+      - /bin/bash
+      - -c
+      - |
+        chmod +x ./src/pre-start.sh && ./src/pre-start.sh
+        fastapi dev ./src/main.py --host 0.0.0.0 --port ${API_PORT}
+
+  app:
+    container_name: ${APP_SERVER}
+    build: ./app
+    env_file:
+      - .env
+    volumes:
+      - ./app:/app
+    #ports:
+    #  - 8001:${APP_PORT}
+    depends_on:
+      - api
+    command: streamlit run ./src/main.py --server.port ${APP_PORT}
+    #stdin_open: true # docker run -i
+    #tty: true        # docker run -t
+
+  db:
+    container_name: ${POSTGRES_SERVER}
+    image: postgres:16
+    #ports:
+    #  - "5432:5432"
+    env_file:
+      - .env
+    volumes:
+      - ./volumes/${POSTGRES_SERVER}_volumes:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    container_name: ${NGINX_SERVER}
+    image: nginx:1.27.0-perl
+    ports:
+      - 80:80
+    env_file:
+      - .env
+    volumes:
+      - ./nginx/nginx_config.conf:/etc/nginx/nginx.conf
+      - ./nginx/log:/var/log/nginx
+    depends_on:
+      - api
+      - app
+
+networks:
+  default:
+    name: kotact-network
+
+
+  

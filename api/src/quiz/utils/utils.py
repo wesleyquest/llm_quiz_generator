@@ -6,6 +6,8 @@ from langchain_core.prompts import load_prompt
 from src.quiz.utils.fewshot import sample_fewshot
 import json
 import random
+import openai
+
 # random content, type 세트 만들기
 
 async def make_set(quiz_content,quiz_type,number):
@@ -155,9 +157,16 @@ async def batch_generate_gpt4o_quiz(
     )
 
     #results = chain.invoke(input_data).replace("A:", "\n    A:").replace("B:","\n    B:").replace("①","\n    ①").replace("②","    ②").replace("③","    ③").replace("④","    ④")
-    response = chain.invoke(input_data)
-    results = await quiz_format(response)
-    return results
+    try:
+        response = chain.invoke(input_data)
+        results = await quiz_format(response)
+        return results
+    except openai.NotFoundError:
+        return ["토큰이 부족합니다",["토큰이 부족합니다"]]
+        
+    except Exception as e:
+        return ["기타 에러 발생",["기타 에러 발생"]]
+
 
 # async def batch_generate_gpt4o_quiz(
 #         openai_api_key,
@@ -249,9 +258,16 @@ async def batch_translate_gpt4o_quiz(
         | llm
         | StrOutputParser()
     )
+    try:
+        results=chain.invoke(input_data)
+        return results
 
-    results=chain.invoke(input_data)
-    return results
+    except openai.NotFoundError:
+        return "토큰이 부족합니다"
+        
+    except Exception as e:
+        return "기타 에러 발생"    
+
 
 # stream 번역
 async def stream_translate_gpt4o_quiz(
@@ -270,20 +286,27 @@ async def stream_translate_gpt4o_quiz(
         | llm
         | StrOutputParser()
     )
-
+    
     async def generate():
-        buffer=""
-        async for chunk in chain.astream(input_data):
-            buffer +=chunk
-            lines = buffer.split("\n")
+        try:
+            buffer=""
+            async for chunk in chain.astream(input_data):
+                buffer +=chunk
+                lines = buffer.split("\n")
 
-            for line in lines[:-1]:
-                yield f"data: {json.dumps({'text': line})}\n\n"
-            buffer = lines[-1]
+                for line in lines[:-1]:
+                    yield f"data: {json.dumps({'text': line})}\n\n"
+                buffer = lines[-1]
 
-        # Yield any remaining content in the buffer
-        if buffer:
-            yield f"data: {json.dumps({'text': buffer})}\n\n"
+            # Yield any remaining content in the buffer
+            if buffer:
+                yield f"data: {json.dumps({'text': buffer})}\n\n"
+        except openai.NotFoundError:
+            yield f"data: {json.dumps({'text': '토큰이 부족합니다'})}\n\n"
+            
+        except Exception as e:
+            yield f"data: {json.dumps({'text': '기타 에러 발생'})}\n\n"
+
 
     return generate
     #########################################################################################################

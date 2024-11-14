@@ -88,7 +88,7 @@ if (len(st.session_state["translated_messages"])==1) and (st.session_state["key_
     st.session_state["translated_messages"].append({"role": "assistant", "content": f"번역할 내용을 입력해 주세요!","answer":"안녕하세요","typing":True})
     #st.session_state["translated_messages"] = [{"role": "assistant", "content": f"안녕하세요 {username} 님 !  \n 번역할 내용을 입력해 주세요!","answer":"안녕하세요","typing":True}]
 
-col1, col2 = st.tabs(['Quiz','Translate'])
+col1, col2, col3 = st.tabs(['퀴즈 생성','퀴즈 번역','텍스트 번역'])
 with col1:
     if st.session_state["rerun"]==True:
         st.session_state["rerun"]=False
@@ -115,6 +115,15 @@ with col2:
     #     st.session_state["rerun"]=False
     #     st.rerun()
     if st.session_state['stream']:
-        stream_translation_interface()
+        stream_translation_interface('quiz')
     else:
-        batch_translation_interface()
+        batch_translation_interface('quiz')
+
+with col3:
+    # if st.session_state["rerun"]==True:
+    #     st.session_state["rerun"]=False
+    #     st.rerun()
+    if st.session_state['stream']:
+        stream_translation_interface('text')
+    else:
+        batch_translation_interface('text')

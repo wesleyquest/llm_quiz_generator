@@ -31,7 +31,7 @@ async def batch_generate_quiz(
         quiz_type = quiz_type,
         number = number,
     )
-
+    
     return {
         "results": data[0],
         "answer": data[1]
@@ -107,5 +107,4 @@ async def stream_translate_quiz(
         answer = answer,
         language = language,
     )
-
     return StreamingResponse(data(), media_type="text/event-stream")

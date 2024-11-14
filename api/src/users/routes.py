@@ -203,6 +203,11 @@ async def api_key_check(
         return {
             "results": "OPENAI_API_KEY is invalid"
         }
+    except openai.RateLimitError:
+        # 토큰이 부족하거나 API 호출 제한에 도달한 경우
+        return {
+            "results": "Token limit exceeded or rate limit reached"
+        }
     except Exception as e:
         # 기타 오류 처리
         return {
